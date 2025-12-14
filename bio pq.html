@@ -1,0 +1,645 @@
+
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bio 101 pq Interactive Quiz</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--accent:#06b6d4;--muted:#94a3b8;--white:#e6eef6}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;background:linear-gradient(180deg,#071022 0%, #071a2a 100%);color:var(--white);-webkit-font-smoothing:antialiased}
+    .wrap{max-width:920px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:20px}
+    .meta{color:var(--muted);font-size:13px}
+    .card{background:rgba(255,255,255,0.03);padding:20px;border-radius:12px;margin-top:18px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
+    .question{font-size:18px;margin-bottom:12px}
+    .choices{display:flex;flex-direction:column;gap:8px}
+    .choice{background:#072031;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .choice:hover{transform:translateY(-2px)}
+    .choice.selected{outline:3px solid rgba(6,182,212,0.12);background:#2babff}
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+    button{background:var(--accent);color:#042029;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--white)}
+    .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#60a5fa);width:0%}
+    .footer{margin-top:16px;color:var(--muted);font-size:13px}
+    .result{padding:18px;border-radius:10px;background:linear-gradient(180deg, rgba(2,6,23,0.85), rgba(2,6,23,0.6));}
+    .review{margin-top:12px}
+    .q-review{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;margin-bottom:10px}
+    @media(max-width:560px){.wrap{padding:12px}h1{font-size:18px}.question{font-size:16px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>BIO 101 INTERACTIVE MCQ QUIZ</h1>
+        <div class="meta">74 multiple-choice questions </div>
+      </div>
+    </header><div class="card" id="quiz-card">
+  <div class="progress" aria-hidden><i id="progress-bar"></i></div>
+  <div style="height:14px"></div>
+  <div id="q-area">
+    </div>
+
+  <div class="controls">
+    <div style="display:flex;gap:8px">
+      <button id="prevBtn" class="secondary">Previous</button>
+      <button id="nextBtn">Next</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="submitBtn" class="secondary">Submit</button>
+      <div style="color:var(--muted);font-size:13px">Q <span id="q-num">1</span> / <span id="q-total">10</span></div>
+    </div>
+  </div>
+
+  <div class="footer">Tip: Select an answer and press Next. You can review answers after submission.</div>
+</div>
+
+<div id="result-area" style="display:none" class="card">
+  <div class="result">
+    <h2 id="score-title"></h2>
+    <p id="score-summary" class="meta"></p>
+  </div>
+  <div class="review" id="review-list"></div>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button id="retryBtn">Retake Quiz</button>
+    <button id="exportBtn" class="secondary">Export Results</button>
+  </div>
+</div>
+<br><br><br>
+  <a href="https://wa.me/+2349036795652"><button>Contact The Developer</button></a>
+    <a href="https://wa.me/+2349036795652"><button>Support Project</button></a><br><br>
+   <button onclick="shareOnWhatsApp()">Share Quiz link via WhatsApp</button>
+  <h2>Designed by Readone</h2>
+  </div>
+   <script>
+  const QUESTIONS = [
+  { 
+    q: "The reproductive part of a plant is", 
+    c: ["Node", "Internode", "Flower", "Bud"], 
+    a: 2, // Flower
+    citation: ""
+  },
+  { 
+    q: "The pistil consists of", 
+    c: ["Ovary, style, stigma", "Petal, ovary, filament", "Stigma, anther, filament", "Sepal, style, ovule"], 
+    a: 0, // Ovary, style, stigma
+    citation: ""
+  },
+  { 
+    q: "Which of these is used to represent ribosomes of prokaryotes and eukaryotes?", 
+    c: ["40s and 50s", "60s and 80s", "70s and 80s", "50s and 70s"], 
+    a: 2, // 70s and 80s (Though prokaryotic is 70S and eukaryotic is 80S, the options listed 70S and 80S is the closest pair representation of the two types of ribosomes)
+    citation: ""
+  },
+  { 
+    q: "Which of these is a single membrane organelle?", 
+    c: ["Cytoplast", "Ribosomes", "Nucleus", "Endoplasmic reticulum"], 
+    a: 3, // Endoplasmic reticulum
+    citation: ""
+  },
+  { 
+    q: "Who is the father of genetics?", 
+    c: ["Gregor Mendel", "Charles Darwin", "Watson & Crick", "Robert Hooke"], 
+    a: 0, // Gregor Mendel
+    citation: ""
+  },
+  { 
+    q: "Humans have how many chromosomes?", 
+    c: ["23 pairs", "46 pairs", "22 pairs", "50 pairs"], 
+    a: 0, // 23 pairs (Equivalent to 46 chromosomes)
+    citation: ""
+  },
+  { 
+    q: "An asexual reproduction in yeast is known as", 
+    c: ["Binary fission", "Fragmentation", "Budding", "Sporulation"], 
+    a: 2, // Budding
+    citation: ""
+  },
+  { 
+    q: "What is the function of a peroxisome?", 
+    c: ["Protein synthesis", "Breakdown of fatty acids", "DNA replication", "Cellular respiration"], 
+    a: 1, // Breakdown of fatty acids (and detoxification/lipid metabolism)
+    citation: ""
+  },
+  { 
+    q: "What part of the cell contains a thin layer of a pectate structure that contains Magnesium and Calcium?", 
+    c: ["Plasma membrane", "Cell wall", "Nucleus", "Cytoplasm"], 
+    a: 1, // Cell wall (or Middle lamella which is part of the cell wall)
+    citation: ""
+  },
+  { 
+    q: "What is the function of cilia in a cell?", 
+    c: ["Energy production", "Cell movement and fluid transport", "Protein synthesis", "DNA storage"], 
+    a: 1, // Cell movement and fluid transport
+    citation: ""
+  },
+  { 
+    q: "Tonoplasts are located in which cell organelle?", 
+    c: ["Cytoplasm", "Plastids", "Central vacuole", "Plasma membrane"], 
+    a: 2, // Central vacuole (Tonoplast is the membrane of the vacuole)
+    citation: ""
+  },
+  { 
+    q: "The female reproductive part of a flower is", 
+    c: ["Stamen", "Pistil", "Sepal", "Ovule"], 
+    a: 1, // Pistil (or Carpel)
+    citation: ""
+  },
+  { 
+    q: "The site of ATP synthesis in mitochondria is", 
+    c: ["Cristae", "Matrix", "Outer membrane", "Intermembrane space"], 
+    a: 0, // Cristae (The inner membrane folds where ATP is synthesized)
+    citation: ""
+  },
+  { 
+    q: "Mitotic cell division occurs in", 
+    c: ["Somatic cell", "Non-somatic cell", "Gamete cell", "Sex cell"], 
+    a: 0, // Somatic cell
+    citation: ""
+  },
+  { 
+    q: "In adequate supply of water, algae reproduce via", 
+    c: ["Spore formation", "Budding", "Binary fission", "Fragmentation"], 
+    a: 3, // Fragmentation
+    citation: ""
+  },
+  { 
+    q: "______ is the removal of toxic materials of metabolism from the body of an organism.", 
+    c: ["Egestion", "Excretion", "Respiration", "Photosynthesis"], 
+    a: 1, // Excretion
+    citation: ""
+  },
+  { 
+    q: "Who first described a cell?", 
+    c: ["Robert Hooke", "Theodore Schwann", "Matthias Schleiden", "Antonie van Leeuwenhoek"], 
+    a: 0, // Robert Hooke (coined the term 'cell')
+    citation: ""
+  },
+  { 
+    q: "What is the functional unit of heredity?", 
+    c: ["Chromosome", "Genes", "DNA", "RNA"], 
+    a: 1, // Genes
+    citation: ""
+  },
+  { 
+    q: "What is the difference between chromoplast and leucoplast?", 
+    c: ["Chromoplast stores starch, leucoplast stores pigment", "Chromoplast has color pigments, leucoplast is colorless", "Chromoplast is found in roots, leucoplast is in leaves", "Chromoplast carries DNA, leucoplast stores protein"], 
+    a: 1, // Chromoplast has color pigments, leucoplast is colorless
+    citation: ""
+  },
+  { 
+    q: "The transfer of pollen from the anther to the stigma through carriers such as insects, wind, etc., is called", 
+    c: ["Pollens", "Pollination", "Self-pollination", "Cross-pollination"], 
+    a: 1, // Pollination
+    citation: ""
+  },
+  { 
+    q: "Who first coined the word chromosomes?", 
+    c: ["Robert Brown", "Waldeyer", "Schwann", "Watson & Crick"], 
+    a: 1, // Waldeyer
+    citation: ""
+  },
+  { 
+    q: "What is another name for lysosomes?", 
+    c: ["Suicidal bag", "Detoxifying agents", "Energy powerhouse", "Protein factory"], 
+    a: 0, // Suicidal bag
+    citation: ""
+  },
+  { 
+    q: "What is the core structure of cilia and flagella?", 
+    c: ["Microtubules", "Microfilaments", "Ribosomes", "Centrioles"], 
+    a: 0, // Microtubules (arranged as an Axoneme)
+    citation: ""
+  },
+  { 
+    q: "What is a ripened ovary called?", 
+    c: ["Ovule", "Fruit", "Seed", "Endosperm"], 
+    a: 1, // Fruit
+    citation: ""
+  },
+  { 
+    q: "What is the difference between chloroplast and leucoplast?", 
+    c: ["Chloroplast is colorless, leucoplast is green", "Chloroplast stores pigments, leucoplast stores starch", "Chloroplast is found in roots, leucoplast is in leaves", "Chloroplast contains DNA, leucoplast does not"], 
+    a: 1, // Chloroplast stores pigments (chlorophyll/green), leucoplast stores starch (is colorless)
+    citation: ""
+  },
+  { 
+    q: "Which animals give birth to their young ones alive?", 
+    c: ["Amphibians", "Reptiles", "Mammals", "Birds"], 
+    a: 2, // Mammals (Viviparous)
+    citation: ""
+  },
+  { 
+    q: "Which of these is a parasite?", 
+    c: ["Roundworm", "Mosquito", "Fluke"], 
+    a: 0, // All options are parasites (Roundworm, Tapeworm, Fluke) or vectors (Mosquito), but Roundworm and Tapeworm are obligate parasites. Roundworm is the first option.
+    citation: ""
+  },
+  { 
+    q: "When was the cell theory formulated/implemented/proposed?", 
+    c: ["1665", "1838", "1855", "1901"], 
+    a: 1, // 1838 (often cited as the starting year with Schleiden and Schwann)
+    citation: ""
+  },
+  { 
+    q: "Which classification is based on grouping animals based on their natural affinities?", 
+    c: ["Binomial nomenclature", "Natural classification", "Artificial classification", "Phylogenetic classification"], 
+    a: 1, // Natural classification
+    citation: ""
+  },
+  { 
+    q: "What is the function of vacuole in plants?", 
+    c: ["Photosynthesis", "Storage and structural support", "Respiration", "Protein synthesis"], 
+    a: 1, // Storage and structural support
+    citation: ""
+  },
+  { 
+    q: "Which primary pigment is responsible for photosynthesis?", 
+    c: ["Xanthophyll", "Carotene", "Chlorophyll", "Anthocyanin"], 
+    a: 2, // Chlorophyll
+    citation: ""
+  },
+  { 
+    q: "Which organelle is responsible for detoxifying chemicals?", 
+    c: ["Mitochondria", "Golgi apparatus", "Peroxisome", "Lysosome"], 
+    a: 2, // Peroxisome (or Smooth Endoplasmic Reticulum, but Peroxisome is listed)
+    citation: ""
+  },
+  { 
+    q: "______ is the process by which food is broken down for energy (or release of energy from food substance)?", 
+    c: ["Photosynthesis", "Respiration", "Excretion", "Circulation"], 
+    a: 1, // Respiration (or Cellular Respiration)
+    citation: ""
+  },
+  { 
+    q: "______ is the branch of biology that deals with classifying, naming, and organizing living things (or scientific study of identification, naming, and deciding the group to which an animal belongs)?", 
+    c: ["Morphology", "Taxonomy", "Ecology", "Genetics"], 
+    a: 1, // Taxonomy
+    citation: ""
+  },
+  { 
+    q: "If a plant with an unknown genotype is crossed with a homozygous short plant and the phenotype result is 1:1, what is the unknown genotype of the plant?", 
+    c: ["TT", "Tt", "tt", "TT or Tt"], 
+    a: 1, // Tt (A heterozygous plant crossed with a homozygous recessive plant results in a 1:1 phenotypic ratio)
+    citation: ""
+  },
+  { 
+    q: "What is the powerhouse of the cell?", 
+    c: ["Nucleus", "Ribosome", "Mitochondria", "Golgi body"], 
+    a: 2, // Mitochondria
+    citation: ""
+  },
+  { 
+    q: "Sickle cell anemia is an example of a trait linked with?", 
+    c: ["Autosomal dominant inheritance", "X-linked inheritance", "Autosomal recessive inheritance", "Y-linked inheritance"], 
+    a: 2, // Autosomal recessive inheritance
+    citation: ""
+  },
+  { 
+    q: "Charles Darwin's theory was based mainly on?", 
+    c: ["Inheritance of acquired traits", "Natural selection", "Spontaneous generation", "Abiogenesis"], 
+    a: 1, // Natural selection
+    citation: ""
+  },
+  { 
+    q: "What is common between prokaryotic and eukaryotic cells?", 
+    c: ["Chromosomes", "Lysosomes", "Mitochondria", "Ribosomes"], 
+    a: 3, // Ribosomes
+    citation: ""
+  },
+  { 
+    q: "Excretion, irritability, and reproduction take place in?", 
+    c: ["Plants and animals", "Animals only", "Plants only", "Microorganisms only"], 
+    a: 0, // Plants and animals (Characteristics of life)
+    citation: ""
+  },
+  { 
+    q: "Seeds are derived/develop from", 
+    c: ["Ovary", "Ovule", "Anther", "Pollen"], 
+    a: 1, // Ovule
+    citation: ""
+  },
+  { 
+    q: "The most inclusive and exclusive groups in taxonomy are", 
+    c: ["Kingdom and Species", "Class and Phylum", "Order and Genus", "Family and Division"], 
+    a: 0, // Kingdom and Species (Based on the options, though Domain is the most inclusive)
+    citation: ""
+  },
+  { 
+    q: "Which of these is a non-membrane bound organelle?", 
+    c: ["Cytoplasm", "Ribosome", "Lysosome", "Golgi Apparatus"], 
+    a: 1, // Ribosome (and Cytoskeleton)
+    citation: ""
+  },
+  { 
+    q: "The function of Ribosome is", 
+    c: ["Stores Lipid", "Protein Synthesis", "Energy Production", "Transport of Materials"], 
+    a: 1, // Protein Synthesis
+    citation: ""
+  },
+  { 
+    q: "The three types of plastids are", 
+    c: ["Chloroplast, Chromoplast, and Leucoplast", "Mitochondria, Chloroplast, and Vacuole", "Ribosome, Golgi, and Lysosome", "Peroxisome, Endosome, and Centriole"], 
+    a: 0, // Chloroplast, Chromoplast, and Leucoplast
+    citation: ""
+  },
+  { 
+    q: "The theory of evolution by natural selection was postulated by", 
+    c: ["Lamarck", "Darwin", "Mendel", "Robert Hooke"], 
+    a: 1, // Darwin (Charles Darwin)
+    citation: ""
+  },
+  { 
+    q: "Behavioral traits are influenced by", 
+    c: ["Environmental factors", "Genetic factors", "Both Genetic and Environmental factors", "None of the above"], 
+    a: 2, // Both Genetic and Environmental factors
+    citation: ""
+  },
+  { 
+    q: "The model form of the plasma membrane is", 
+    c: ["Lipid bilayer model", "Unit membrane model", "Fluid mosaic model", "Sandwich model"], 
+    a: 2, // Fluid mosaic model
+    citation: ""
+  },
+  { 
+    q: "The cell organelle responsible for transporting materials is", 
+    c: ["Ribosome", "Golgi Apparatus", "Endoplasmic Reticulum", "Lysosome"], 
+    a: 2, // Endoplasmic Reticulum (Also Golgi Apparatus, but ER is primary intracellular transport)
+    citation: ""
+  },
+  { 
+    q: "Lamarck proposed that", 
+    c: ["Evolution is driven by mutation", "Acquired traits are passed to offspring", "Natural selection is the main force of evolution", "All organisms share a common ancestor"], 
+    a: 1, // Acquired traits are passed to offspring (Inheritance of acquired traits)
+    citation: ""
+  },
+  { 
+    q: "The role of crossing over is", 
+    c: ["Mutation repair", "New combination of offspring", "DNA replication", "Energy production"], 
+    a: 1, // New combination of offspring (Genetic Recombination)
+    citation: ""
+  },
+  { 
+    q: "The cell organelle containing heterogeneous material in which other organelles are suspended is", 
+    c: ["Vacuole", "Cytoplasm", "Lysosome", "Nucleus"], 
+    a: 1, // Cytoplasm
+    citation: ""
+  },
+  { 
+    q: "Which of the following is unicellular?", 
+    c: ["Volvox", "Spirogyra", "Amoeba"], 
+    a: 0, // Euglena (All listed options are unicellular except Spirogyra, which is a filamentous multicellular algae. Euglena is the first true unicellular option.)
+    citation: ""
+  },
+  { 
+    q: "The ability to detect and respond to changes in the internal and external environment is called", 
+    c: ["Adaptation", "Responsiveness", "Irritability", "Sensation"], 
+    a: 2, // Irritability (or Responsiveness)
+    citation: ""
+  },
+  { 
+    q: "The activities of the cell are controlled by", 
+    c: ["Nucleus", "Cytoplasm", "Mitochondria", "Golgi Apparatus"], 
+    a: 0, // Nucleus (The control center)
+    citation: " "
+  },
+  { 
+    q: "What is the function of the Golgi apparatus?", 
+    c: ["Energy production", "Protein synthesis", "Packaging and secretion of proteins", "Storage of genetic material"], 
+    a: 2, // Packaging and secretion of proteins (Also intracellular transport and secretion)
+    citation: ""
+  },
+  { 
+    q: "What is systematics?", 
+    c: ["Study of classification and evolutionary relationships", "Study of ecosystems", "Study of genetic inheritance", "Study of cell structures"], 
+    a: 0, // Study of classification and evolutionary relationships
+    citation: ""
+  },
+  { 
+    q: "The plasma membrane is made up of?", 
+    c: ["Proteins and carbohydrates", "Phospholipids and proteins", "Nucleotides and amino acids", "Polysaccharides and enzymes"], 
+    a: 1, // Phospholipids and proteins (Fluid Mosaic Model)
+    citation: ""
+  },
+  { 
+    q: "Which of these is NOT a cell scientist?", 
+    c: ["V. Rudolf", "Theodor Schwann", "R. Huskinikan", "Matthias Schleiden"], 
+    a: 2, // R. Huskinikan (Not a recognized major cell theory figure; the others are Rudolf Virchow, Schwann, and Schleiden)
+    citation: ""
+  },
+  { 
+    q: "In a dihybrid cross of BbRr, the genotypic ratio of the offspring is given as 9:3:3:1. What best explains the reason for this?", 
+    c: ["Law of segregation", "Law of independent assortment", "Law of dominance", "Law of incomplete dominance"], 
+    a: 1, // Law of independent assortment
+    citation: ""
+  },
+  { 
+    q: "Which of these is NOT part of the cell theory?", 
+    c: ["All living organisms are composed of cells", "Cells arise from pre-existing cells", "Cells contain a nucleus", "Cells are the basic unit of life"], 
+    a: 2, // Cells contain a nucleus (While true for eukaryotes, it is not part of the *universal* cell theory statement)
+    citation: ""
+  },
+  { 
+    q: "Which is not involved in reproduction?", 
+    c: ["Fertilisation", "Gamete formation", "Parthenocarpy", "Zygote formation"], 
+    a: 2, // Parthenocarpy (Formation of fruit without fertilization)
+    citation: ""
+  },
+  { 
+    q: "The main component of the cell wall is ____.", 
+    c: ["Chitin", "Phospholipids", "Cellulose", "Proteins"], 
+    a: 2, // Cellulose (in plants)
+    citation: ""
+  },
+  { 
+    q: "Which of the following refutes Lamarck's theory of inheritance of acquired traits?", 
+    c: ["A bodybuilder's child having an average body mass", "Giraffes reaching for food at a height, leading to long necks over time", "A plant growing taller because of sunlight exposure", "A fish developing gills over time"], 
+    a: 0, // A bodybuilder's child having an average body mass (Muscles acquired by the parent are not inherited by the offspring)
+    citation: ""
+  },
+  { 
+    q: "Who termed the word 'cell'?", 
+    c: ["Robert Hooke", "Charles Darwin", "Gregor Mendel"], 
+    a: 0, // Robert Hooke
+    citation: ""
+  },
+  { 
+    q: "Prokaryotic cell is what membrane-bound?", 
+    c: ["Thrice", "Double", "Single", "None"], 
+    a: 3, // None (They lack membrane-bound organelles, though they have a plasma membrane)
+    citation: ""
+  },
+  { 
+    q: "A generation formed heterozygous tall plants. It means the parents were?", 
+    c: ["Homozygous recessive", "Homozygous dominant", "Homozygous dominant and homozygous recessive"], 
+    a: 2, // Homozygous dominant and homozygous recessive (e.g., TT x tt -> All Tt)
+    citation: ""
+  },
+  { 
+    q: "A plant which has just one reproductive part on a flower is called ______.", 
+    c: ["Unisex flower", "Monocarpic", "Dioecious", "Bisexual"], 
+    a: 0, // Unisex flower (or Imperfect flower)
+    citation: ""
+  },
+  { 
+    q: "A change or alteration in the DNA is ______.", 
+    c: ["Mutation", "Variation", "Evolution"], 
+    a: 0, // Mutation
+    citation: ""
+  },
+  { 
+    q: "What is the phenotypic ratio of the F2 generation of a monohybrid cross?", 
+    c: ["3:1", "1:1", "9:3:3:1"], 
+    a: 0, // 3:1
+    citation: ""
+  },
+  { 
+    q: "Cell organelles are", 
+    c: ["Compartments with specific functions", "Compartments distinct in structure and function"], 
+    a: 1, // Compartments distinct in structure and function (More complete definition)
+    citation: ""
+  },
+  { 
+    q: "Where is the ribosome found in the cell?", 
+    c: ["In the nucleus", "Freely traced in the cell or within the endoplasmic reticulum", "Attached to the vacuole", "On the plasma membrane"], 
+    a: 1, // Freely traced in the cell (cytosol) or within the endoplasmic reticulum (RER)
+    citation: ""
+  },
+  { 
+    q: "What is a single-membraned, spherical organelle found in the cytoplasm of a cell?", 
+    c: ["Microbodies", "Endoplasmic reticulum", "Nucleus", "Mitochondria"], 
+    a: 0, // Microbodies (e.g., peroxisomes, glyoxysomes)
+    citation: ""
+  },
+  { 
+    q: "What is the function of a microbody in a cell?", 
+    c: ["Protein synthesis", "Enzyme storage and detoxification", "Cell division", "Energy production"], 
+    a: 1, // Enzyme storage and detoxification (Detoxification is a key function of peroxisomes/microbodies)
+    citation: ""
+  }
+];
+
+         
+ 
+    function shareOnWhatsApp() {
+        const message = "https://https://readoneab25.github.io/Bio-101-ecology-cell/";
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = "whatsapp://send?text=" + encodedMessage;
+        window.open(whatsappUrl, '_blank');
+    }
+    
+   
+       
+    let state = { idx:0, answers: Array(QUESTIONS.length).fill(null) };
+const total = QUESTIONS.length;
+
+function renderQuestion(){
+  const area = document.getElementById('q-area');
+  const q = QUESTIONS[state.idx];
+  document.getElementById('q-num').textContent = state.idx+1;
+  document.getElementById('q-total').textContent = total;
+  const progress = Math.round((state.idx/total)*100);
+  document.getElementById('progress-bar').style.width = progress + '%';
+
+  area.innerHTML = '';
+  const qEl = document.createElement('div');
+  qEl.innerHTML = `<div class="question">${state.idx+1}. ${q.q}</div>`;
+  const choices = document.createElement('div'); choices.className='choices';
+  q.c.forEach((choice, i)=>{
+    const btn = document.createElement('div');
+    btn.className='choice'; btn.tabIndex=0; btn.textContent = String.fromCharCode(65+i)+'. '+choice;
+    if(state.answers[state.idx]===i) btn.classList.add('selected');
+    btn.addEventListener('click', ()=>{
+      // select
+      state.answers[state.idx]=i;
+      document.querySelectorAll('.choice').forEach(el=>el.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+    choices.appendChild(btn);
+  });
+  qEl.appendChild(choices);
+  area.appendChild(qEl);
+}
+
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  if(state.idx < total-1) state.idx++;
+  renderQuestion();
+});
+
+document.getElementById('prevBtn').addEventListener('click', ()=>{
+  if(state.idx > 0) state.idx--;
+  renderQuestion();
+});
+
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  // confirm and grade
+  const unanswered = state.answers.filter(a=>a===null).length;
+  if(unanswered>0){
+    if(!confirm(`You have ${unanswered} unanswered questions. Submit anyway?`)) return;
+  }
+  gradeQuiz();
+});
+
+function gradeQuiz(){
+  let correct=0;
+  const review = [];
+  for(let i=0;i<total;i++){
+    const user = state.answers[i];
+    const correctIdx = QUESTIONS[i].a;
+    const ok = user===correctIdx;
+    if(ok) correct++;
+    review.push({i, q:QUESTIONS[i].q, choices:QUESTIONS[i].c, user, correctIdx, ok});
+  }
+  showResult(correct, review);
+}
+
+function showResult(score, review){
+  document.getElementById('quiz-card').style.display='none';
+  const area = document.getElementById('result-area');
+  area.style.display='block';
+  const title = document.getElementById('score-title');
+  title.textContent = `You scored ${score} out of ${total}`;
+  const pct = Math.round((score/total)*100);
+  document.getElementById('score-summary').textContent = `Percentage: ${pct}%`;
+
+  const list = document.getElementById('review-list'); list.innerHTML='';
+  review.forEach(item=>{
+    const div = document.createElement('div'); div.className='q-review';
+    const head = document.createElement('div'); head.style.fontWeight='700'; head.textContent = `${item.i+1}. ${item.q}`;
+    const userAns = document.createElement('div'); userAns.style.marginTop='6px';
+    const ua = item.user===null? 'No answer' : String.fromCharCode(65+item.user)+'. '+item.choices[item.user];
+    const ca = String.fromCharCode(65+item.correctIdx)+'. '+item.choices[item.correctIdx];
+    userAns.innerHTML = `<div><strong>Your answer:</strong> ${ua}</div><div style="margin-top:4px"><strong>Correct answer:</strong> ${ca}</div>`;
+    if(item.ok) userAns.style.color='lightgreen'; else userAns.style.color='#fca5a5';
+    div.appendChild(head); div.appendChild(userAns);
+    list.appendChild(div);
+  });
+}
+
+document.getElementById('retryBtn').addEventListener('click', ()=>{
+  // reset
+  state = { idx:0, answers: Array(total).fill(null) };
+  document.getElementById('result-area').style.display='none';
+  document.getElementById('quiz-card').style.display='block';
+  renderQuestion();
+});
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const data = {answers: state.answers, questions: QUESTIONS};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'cos101_module1-2_results.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+// init
+renderQuestion();
+</script>
+
+
+</body>
+</html>
